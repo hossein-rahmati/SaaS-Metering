@@ -1,0 +1,22 @@
+[project]
+name = "saas-metering"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "hossein-rahmati", email = "rmthossein@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "django>=6.1",
+    "django-filter>=26.1",
+    "djangorestframework>=3.18.0",
+    "markdown>=3.10.3",
+]
+
+[project.scripts]
+saas-metering = "saas_metering:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
