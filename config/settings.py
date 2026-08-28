@@ -38,7 +38,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "django_filters",
+    "apps.accounts",
+    "apps.organizations",
+    "apps.plans",
+    "apps.subscriptions",
+    "apps.metering",
 ]
 
 MIDDLEWARE = [
@@ -129,4 +133,3 @@ MAILERS = {
 }
 
 AUTH_USER_MODEL = "accounts.User"
-
