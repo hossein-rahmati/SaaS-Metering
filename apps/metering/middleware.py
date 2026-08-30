@@ -1,5 +1,6 @@
+from django.core.cache import cache
 from django.http import JsonResponse
-from apps.organizations.models import Organization, APIKey
+from apps.organizations.models import APIKey
 from apps.subscriptions.models import Subscription
 from apps.metering.models import UsageRecord
 
@@ -21,17 +22,16 @@ class UsageLimitMiddleware:
                 status=401,
             )
 
-        api_key = auth_header.split(" ")[1]
+        raw_key = auth_header.split(" ")[1]
 
         try:
             api_key = APIKey.objects.select_related("organization").get(
-                key=api_key, is_active=True
+                key=raw_key, is_active=True
             )
         except APIKey.DoesNotExist:
             return JsonResponse({"error": "Invalid or inactive API key"}, status=401)
 
         organization = api_key.organization
-        
 
         try:
             subscription = organization.subscription
@@ -44,23 +44,24 @@ class UsageLimitMiddleware:
             return JsonResponse({"error": "Subscription is not active"}, status=403)
 
         plan = subscription.plan
-        usage, _ = UsageRecord.objects.get_or_create(
-            organization=organization, metric_name="api_requests"
-        )
 
-        if usage.count >= plan.max_requests_per_month:
+        cache_key = f"usage:org:{organization.id}:api_requests"
+        current_usage = cache.get(cache_key, 0)
+
+        if current_usage >= plan.max_requests_per_month:
             return JsonResponse(
                 {
                     "error": "Usage limit exceeded for current plan",
                     "limit": plan.max_requests_per_month,
-                    "used": usage.count,
+                    "used": current_usage,
                 },
                 status=429,
             )
 
-        usage.count += 1
-        usage.save()
+        try:
+            cache.incr(cache_key)
+        except:
+            cache.set(cache_key, 1, timeout=None)
 
         request.organization = organization
-
         return self.get_response(request)
