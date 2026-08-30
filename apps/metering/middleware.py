@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from apps.organizations.models import Organization
+from apps.organizations.models import Organization, APIKey
 from apps.subscriptions.models import Subscription
 from apps.metering.models import UsageRecord
 
@@ -12,16 +12,26 @@ class UsageLimitMiddleware:
         if not request.path.startswith("/api/"):
             return self.get_response(request)
 
-        org_id = request.headers.get("X-Organization-Id")
-        if not org_id:
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
             return JsonResponse(
-                {"error": "X-Organization-Id header is required"}, status=400
+                {
+                    "error": "Missing or invalid Authorization header. Expected Bearer token."
+                },
+                status=401,
             )
 
+        api_key = auth_header.split(" ")[1]
+
         try:
-            organization = Organization.objects.get(id=org_id)
-        except Organization.DoesNotExist:
-            return JsonResponse({"error": "Organization not found"}, status=404)
+            api_key = APIKey.objects.select_related("organization").get(
+                key=api_key, is_active=True
+            )
+        except APIKey.DoesNotExist:
+            return JsonResponse({"error": "Invalid or inactive API key"}, status=401)
+
+        organization = api_key.organization
+        
 
         try:
             subscription = organization.subscription
