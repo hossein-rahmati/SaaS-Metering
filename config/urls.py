@@ -18,10 +18,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from apps.metering.views import sample_service_api, list_plans_api, usage_summary_api
+from apps.organizations.views import manage_api_keys, revoke_api_key
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/sample/", sample_service_api),
     path("api/v1/plans/", list_plans_api),
     path("api/v1/usage/", usage_summary_api),
+    path("api/v1/keys/", manage_api_keys),
+    path("api/v1/keys/<int:key_id>/revoke/", revoke_api_key),
 ]

@@ -10,6 +10,11 @@ class UsageLimitMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        excluded_paths = ["/admin/", "/api/v1/keys/", "/api/v1/plans/"]
+
+        if any(request.path.startswith(p) for p in excluded_paths):
+            return self.get_response(request)
+
         if not request.path.startswith("/api/"):
             return self.get_response(request)
 
